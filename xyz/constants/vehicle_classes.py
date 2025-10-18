@@ -10,5 +10,5 @@ VEHICLE_CLASSES = {
     "7a": "Truk 3 sumbu",
     "7b": "Truk gandengan",
     "7c": "Truk semitrailer",
-    "12": "Kendaraan tidak bermotor"
+    "8": "Kendaraan tidak bermotor"
 }
