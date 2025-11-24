@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 import sys
 
-def jalankan_deteksi(video_path, model_path="besti.pt", progress_callback=None):
+def jalankan_deteksi(video_path, model_path='C:/HDD/TUGAS KULIAH/TrafficCountYOLO/Protel/TrafficApp/Model1/best.pt', progress_callback=None):
     model = YOLO(model_path)
     cap = cv2.VideoCapture(video_path)
     model.overrides["verbose"] = False  # Nonaktifkan log YOLO bawaan
