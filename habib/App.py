@@ -516,42 +516,76 @@ class VideoPlayer(QWidget):
     def run_detection(self):
         if self.current_video_path is None: return
 
-        # Hitung estimasi waktu proses
-        cap = cv2.VideoCapture(self.current_video_path)
-        frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        fps = cap.get(cv2.CAP_PROP_FPS) or 30
-        cap.release()
-
-        duration_sec = frame_count / fps if fps > 0 else 0
-
+        # 1. Ambil koordinat garis
         coords_list = self.get_all_line_coords()
         total_lines = len(coords_list)
+        
         if not coords_list:
             QMessageBox.warning(self, "Peringatan", "Gambar garis deteksi terlebih dahulu!")
             return
 
-        # Estimasi sederhana
-        est_time = duration_sec * total_lines
+        # 2. Hitung Estimasi Waktu (Hanya perkiraan)
+        cap = cv2.VideoCapture(self.current_video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        cap.release()
+
+        duration_sec = frame_count / fps if fps > 0 else 0
+        est_time = duration_sec  # Anggap proses realtime (bisa disesuaikan)
         est_min = int(est_time // 60)
         est_sec = int(est_time % 60)
 
-        # Tampilkan popup konfirmasi
+        # 3. Tampilkan Popup Konfirmasi
         msg = QMessageBox()
         msg.setWindowTitle("Konfirmasi Deteksi")
         msg.setText(
             f"Jumlah garis deteksi: {total_lines}\n"
-            f"Estimasi waktu proses: {est_min} menit {est_sec} detik\n\n"
+            f"Estimasi waktu proses: +/- {est_min} menit {est_sec} detik\n\n"
             f"Mulai pemrosesan deteksi?"
         )
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         result = msg.exec_()
 
         if result != QMessageBox.Yes:
-            return  # batal proses deteksi
+            return  # Batal jika user klik No
 
+        # Update UI
         self.info_label.setText("Status: Memproses video... Mohon tunggu.")
         self.info_progress.setValue(0)
-        QApplication.processEvents()
+        self.run_button.setEnabled(False) # Matikan tombol agar tidak di-klik double
+        
+        # ==============================================================
+        # BAGIAN YANG HILANG SEBELUMNYA (FIX)
+        # ==============================================================
+        
+        # A. Format Koordinat
+        # Fungsi di backend (testhitung.py) butuh list tuple [(x1,y1,x2,y2), ...], 
+        # sedangkan get_all_line_coords mengembalikan list of dictionary.
+        # Kita perlu mengekstraknya:
+        raw_lines = []
+        for item in coords_list:
+            x1, y1, x2, y2 = item['coords']
+            # Paksa ubah jadi integer (bilangan bulat)
+            raw_lines.append((int(x1), int(y1), int(x2), int(y2)))
+
+        # B. Tentukan Path
+        # Pastikan path model benar. Sesuaikan jika nama file model Anda beda.
+        model_path = "model/best.pt"  
+        
+        # Path output video
+        base_name = os.path.splitext(self.current_video_path)[0]
+        output_path = f"{base_name}_hasil.mp4"
+
+        # C. Inisialisasi Thread Worker
+        # Kita simpan di self.worker agar garbage collector tidak menghapusnya
+        self.worker = DetectionWorker(self.current_video_path, model_path, output_path, raw_lines)
+        
+        # D. Hubungkan Signal (Events)
+        self.worker.progress_changed.connect(self.info_progress.setValue)
+        self.worker.finished.connect(self.on_detection_finished)
+        
+        # E. Start Thread
+        self.worker.start()
 
     def on_detection_finished(self):
         self.info_label.setText("Selesai! Klik 'Lihat Log' untuk melihat detail.")
