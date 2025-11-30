@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import csv
 import datetime
+import torch
 
 def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
                                lines_coords=None, progress_callback=None):
@@ -18,6 +19,14 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
         '7a': (0, 165, 255), '7b': (128, 128, 0), '7c': (0, 128, 0), '8': (128, 0, 0),
     }
 
+    if torch.cuda.is_available():
+        device = 0  # Gunakan GPU pertama (index 0)
+        nama_device = torch.cuda.get_device_name(0)
+        print(f"[INFO] Menggunakan GPU: {nama_device}")
+    else:
+        device = 'cpu'
+        print("[INFO] GPU tidak ditemukan, menggunakan CPU.")
+    
     hasil_folder = "hasil_test"
     os.makedirs(hasil_folder, exist_ok=True)
     
@@ -33,6 +42,13 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     
+    # 1. TENTUKAN SKALA (Misal 50% dari ukuran asli)
+    scale_output = 0.5 
+    
+    # Hitung ukuran baru
+    out_width = int(width * scale_output)
+    out_height = int(height * scale_output)
+    
     # ... (Setup VideoWriter tetap sama) ...
     output_filename = os.path.basename(output_path)
     output_path = os.path.join(hasil_folder, output_filename)
@@ -41,7 +57,7 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     while os.path.exists(output_path):
         output_path = f"{base}_{counter}{ext}"
         counter += 1
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (out_width, out_height))
 
     if lines_coords is None:
         lines_coords = [
@@ -75,7 +91,7 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
         if not ret: break
         
         current_video_time = frame_count / fps
-        results = model.track(frame, persist=True, tracker="bytetrack.yaml", device=0)
+        results = model.track(frame, persist=True, tracker="bytetrack.yaml", device=device)
         annotated_frame = frame.copy()
 
         for i, (x1, y1, x2, y2) in enumerate(lines_coords):
@@ -147,7 +163,8 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
                 cv2.putText(annotated_frame, label, (x1, y1 - 5),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 2)
         
-        out.write(annotated_frame)
+        frame_resized = cv2.resize(annotated_frame, (out_width, out_height), interpolation=cv2.INTER_AREA)
+        out.write(frame_resized)
         frame_count += 1
         
         if total_frames > 0:
