@@ -9,22 +9,14 @@ import csv
 import datetime
 
 def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
-                               lines_coords=None, progress_callback=None):
+                                lines_coords=None, progress_callback=None):
     CLASS_NAMES = ['1', '2', '3', '4', '5a', '5b', '6a', '6b', '7a', '7b', '7c', '8']
 
+    # ... (CLASS_COLORS dan setup folder tetap sama) ...
     CLASS_COLORS = {
-        '1': (0, 255, 0),      # Hijau
-        '2': (255, 0, 0),      # Biru
-        '3': (0, 0, 255),      # Merah
-        '4': (255, 255, 0),    # Cyan (Kuning muda)
-        '5a': (255, 0, 255),   # Magenta
-        '5b': (0, 255, 255),   # Kuning (Cyan di RGB)
-        '6a': (128, 0, 128),   # Ungu
-        '6b': (0, 128, 255),   # Oranye kebiruan
-        '7a': (0, 165, 255),   # Oranye
-        '7b': (128, 128, 0),   # Zaitun (Olive)
-        '7c': (0, 128, 0),     # Hijau tua
-        '8': (128, 0, 0),      # Merah tua
+        '1': (0, 255, 0), '2': (255, 0, 0), '3': (0, 0, 255), '4': (255, 255, 0),
+        '5a': (255, 0, 255), '5b': (0, 255, 255), '6a': (128, 0, 128), '6b': (0, 128, 255),
+        '7a': (0, 165, 255), '7b': (128, 128, 0), '7c': (0, 128, 0), '8': (128, 0, 0),
     }
 
     hasil_folder = "hasil_test"
@@ -41,12 +33,10 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    if total_frames == 0 or fps == 0:
-        raise ValueError("Video tidak valid, kosong, atau tidak dapat membaca FPS")
-
+    
+    # ... (Setup VideoWriter tetap sama) ...
     output_filename = os.path.basename(output_path)
     output_path = os.path.join(hasil_folder, output_filename)
-
     base, ext = os.path.splitext(output_path)
     counter = 1
     while os.path.exists(output_path):
@@ -66,30 +56,26 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     counts_total = {cls: 0 for cls in CLASS_NAMES}
     counted_ids_per_line = [set() for _ in lines_coords]
     counts_per_line = [0] * len(lines_coords)
-    crossing_events = []
     
-    # === MODIFIKASI 1: Variabel untuk menyimpan waktu 'flash' hitam ===
-    # Format: {obj_id: waktu_video_saat_dihitung_dalam_detik}
+    # === [MODIFIKASI 1] Variabel baru untuk menghitung per Garis DAN per Kelas ===
+    # Struktur: { indeks_garis: { '1': 0, '2': 0, ... }, ... }
+    counts_detailed = {i: {cls: 0 for cls in CLASS_NAMES} for i in range(len(lines_coords))}
+    # ============================================================================
+
+    crossing_events = []
     last_counted_time = {} 
 
     frame_count = 0
     last_percent = -1
-
-    print(f"Mulai memproses {video_path} ...")
-    print(f"Mulai memproses {video_path} ...")
-
-    # === [TAMBAHAN BARU 1] Mulai Timer ===
     start_time = datetime.datetime.now()
-    # =====================================
+
+    print(f"Mulai memproses {video_path} ...")
 
     while cap.isOpened():
         ret, frame = cap.read()
-        if not ret:
-            break
+        if not ret: break
         
-        # Hitung waktu video saat ini dalam detik
         current_video_time = frame_count / fps
-
         results = model.track(frame, persist=True, tracker="bytetrack.yaml")
         annotated_frame = frame.copy()
 
@@ -109,7 +95,6 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
                 class_name = CLASS_NAMES[cls_id] if cls_id < len(CLASS_NAMES) else "Unknown"
                 x_ref, y_ref = int((x1 + x2) / 2), y2
 
-                # --- LOGIKA HITUNG (Tidak Berubah) ---
                 if obj_id in object_history:
                     prev_pos = object_history[obj_id]
                     for i, (x1_line, y1_line, x2_line, y2_line) in enumerate(lines_coords):
@@ -120,10 +105,13 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
                             counts_per_line[i] += 1
                             counted_ids_per_line[i].add(obj_id)
                             
-                            # Catat waktu saat ini (detik)
+                            # === [MODIFIKASI 2] Tambahkan hitungan ke variable detail ===
+                            if class_name in counts_detailed[i]:
+                                counts_detailed[i][class_name] += 1
+                            # ============================================================
+                            
                             last_counted_time[obj_id] = current_video_time
 
-                            # Log ke variable event
                             video_timestamp_delta = datetime.timedelta(seconds=current_video_time)
                             video_timestamp = str(video_timestamp_delta)
                             if '.' in video_timestamp:
@@ -140,33 +128,23 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
                 
                 object_history[obj_id] = (x_ref, y_ref)
 
-                # === MODIFIKASI TAMPILAN AGAR LEBIH JELAS ===
-                
-                # 1. Setingan Default (Normal)
+                # ... (Bagian Visualisasi Gambar Kotak & Teks tetap sama) ...
                 final_color = CLASS_COLORS.get(class_name, (0, 255, 0))
                 thickness = 2
                 label = f"ID:{obj_id} {class_name}"
-                text_color = (255, 255, 255) # Teks putih
+                text_color = (255, 255, 255)
                 
-                # 2. Cek Status 'Flash' (Baru saja dihitung < 0.5 detik lalu)
                 if obj_id in last_counted_time:
                     time_diff = current_video_time - last_counted_time[obj_id]
                     if time_diff < 0.5: 
-                        # -- EFEK VISUAL SAAT DIHITUNG --
-                        final_color = (255, 255, 255)   # Jadi PUTIH TERANG
-                        thickness = 6                   # GARIS JADI TEBAL
-                        label = f"ID:{obj_id} [OK]"     # Tambah indikator teks
-                        text_color = (0, 0, 0)          # Teks jadi hitam (biar kontras dgn background putih)
+                        final_color = (255, 255, 255)
+                        thickness = 6
+                        label = f"ID:{obj_id} [OK]"
+                        text_color = (0, 0, 0)
 
-                # 3. Gambar Kotak
                 cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), final_color, thickness)
-                
-                # 4. Gambar Latar Belakang Label
                 (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
-                # Pastikan background label menempel rapi di atas kotak
                 cv2.rectangle(annotated_frame, (x1, y1 - 20), (x1 + w, y1), final_color, -1)
-                
-                # 5. Tulis Teks Label
                 cv2.putText(annotated_frame, label, (x1, y1 - 5),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 2)
         
@@ -185,31 +163,19 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     out.release()
     print("\n✅ Selesai! Video hasil disimpan di:", output_path)
     
-    # === [TAMBAHAN BARU 2] Stop Timer & Hitung Durasi ===
     end_time = datetime.datetime.now()
     total_duration = end_time - start_time
     print(f"⏱️ Waktu total proses: {total_duration}")
-    # ====================================================
 
-    # === BAGIAN PENYIMPANAN CSV (TIDAK BERUBAH) ===
+    # === Simpan Log Detail (Tetap Sama) ===
     base_name = os.path.splitext(os.path.basename(output_path))[0]
     log_csv_path = os.path.join(hasil_folder, f"{base_name}_log_detail.csv")
+    # ... (logika nama file unik log detail) ...
     base, ext = os.path.splitext(log_csv_path)
     counter = 1
-    log_csv_path_final = log_csv_path
-    while os.path.exists(log_csv_path_final):
-        log_csv_path_final = f"{base}_{counter}{ext}"
+    while os.path.exists(log_csv_path):
+        log_csv_path = f"{base}_{counter}{ext}"
         counter += 1
-    log_csv_path = log_csv_path_final 
-
-    summary_csv_path = os.path.join(hasil_folder, f"{base_name}_ringkasan.csv")
-    base, ext = os.path.splitext(summary_csv_path)
-    counter = 1
-    summary_csv_path_final = summary_csv_path
-    while os.path.exists(summary_csv_path_final):
-        summary_csv_path_final = f"{base}_{counter}{ext}"
-        counter += 1
-    summary_csv_path = summary_csv_path_final 
 
     try:
         with open(log_csv_path, mode="w", newline="", encoding="utf-8") as file:
@@ -224,28 +190,56 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     except Exception as e:
         print(f"Gagal menyimpan log detail CSV: {e}")
 
+    # === Simpan Ringkasan (MODIFIKASI UTAMA DI SINI) ===
+    summary_csv_path = os.path.join(hasil_folder, f"{base_name}_ringkasan.csv")
+    base, ext = os.path.splitext(summary_csv_path)
+    counter = 1
+    while os.path.exists(summary_csv_path):
+        summary_csv_path = f"{base}_{counter}{ext}"
+        counter += 1
+
     try:
         with open(summary_csv_path, mode="w", newline="", encoding="utf-8") as file:
             writer_summary = csv.writer(file)
-            writer_summary.writerow(["=== RINGKASAN TOTAL PER KELAS ==="])
-            writer_summary.writerow(["Kelas", "Jumlah"])
+            
+            # 1. Ringkasan Global (Semua Garis)
+            writer_summary.writerow(["=== TOTAL SEMUA GARIS (PER KELAS) ==="])
+            writer_summary.writerow(["Kelas", "Jumlah Total"])
             total_kendaraan = 0
             for cls, val in counts_total.items():
                 writer_summary.writerow([cls, val])
                 total_kendaraan += val
-            writer_summary.writerow(["Total Semua", total_kendaraan])
+            writer_summary.writerow(["GRAND TOTAL", total_kendaraan])
             writer_summary.writerow([]) 
-            writer_summary.writerow(["=== RINGKASAN TOTAL PER GARIS ==="])
+
+            # 2. Ringkasan Per Garis (Total Only)
+            writer_summary.writerow(["=== TOTAL PER GARIS ==="])
+            writer_summary.writerow(["Garis", "Jumlah Total"])
             for i, val in enumerate(counts_per_line):
                 writer_summary.writerow([f"Garis {i+1}", val])
-                
-            # === [TAMBAHAN BARU 3] Tulis Waktu ke CSV ===
-            writer_summary.writerow([]) 
+            writer_summary.writerow([])
+
+            # === [MODIFIKASI 3] Menulis Detail: Garis | Kelas | Jumlah ===
+            writer_summary.writerow(["=== DETAIL PER GARIS & KELAS ==="])
+            writer_summary.writerow(["Garis", "Kelas", "Jumlah"])
+            
+            for i in sorted(counts_detailed.keys()):
+                nama_garis = f"Garis {i+1}"
+                # Loop setiap kelas
+                for cls in CLASS_NAMES:
+                    jumlah = counts_detailed[i][cls]
+                    # Kita tulis semua kelas meskipun jumlahnya 0 agar rapi, 
+                    # atau Anda bisa tambahkan 'if jumlah > 0:' jika ingin yang ada isinya saja.
+                    writer_summary.writerow([nama_garis, cls, jumlah])
+            
+            writer_summary.writerow([])
+            # ==============================================================
+
             writer_summary.writerow(["=== WAKTU PEMROSESAN ==="])
             writer_summary.writerow(["Waktu Mulai", start_time.strftime("%Y-%m-%d %H:%M:%S")])
             writer_summary.writerow(["Waktu Selesai", end_time.strftime("%Y-%m-%d %H:%M:%S")])
-            writer_summary.writerow(["Durasi Lama Proses", str(total_duration)])
-            # ============================================
+            writer_summary.writerow(["Durasi", str(total_duration)])
+
         print(f"📄 Ringkasan disimpan ke: {summary_csv_path}")
     except Exception as e:
         print(f"Gagal menyimpan ringkasan CSV: {e}")
