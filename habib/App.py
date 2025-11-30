@@ -19,7 +19,7 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 
 # --- Import fungsi deteksi ---
 try:
-    from deteksihitung import jalankan_deteksi_dan_hitung
+    from testhitung import jalankan_deteksi_dan_hitung
 except ImportError:
     print("Warning: testhitung.py tidak ditemukan. Menggunakan dummy.")
     def jalankan_deteksi_dan_hitung(video_path, model_path, output_path, lines_coords, progress_callback):
