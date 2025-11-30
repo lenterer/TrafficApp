@@ -1,7 +1,6 @@
 import sys
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
-import vlc
 from ultralytics import YOLO
 import cv2
 import numpy as np
@@ -9,7 +8,7 @@ import csv
 import datetime
 
 def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
-                                lines_coords=None, progress_callback=None):
+                               lines_coords=None, progress_callback=None):
     CLASS_NAMES = ['1', '2', '3', '4', '5a', '5b', '6a', '6b', '7a', '7b', '7c', '8']
 
     # ... (CLASS_COLORS dan setup folder tetap sama) ...
@@ -76,7 +75,7 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
         if not ret: break
         
         current_video_time = frame_count / fps
-        results = model.track(frame, persist=True, tracker="bytetrack.yaml")
+        results = model.track(frame, persist=True, tracker="bytetrack.yaml", device=0)
         annotated_frame = frame.copy()
 
         for i, (x1, y1, x2, y2) in enumerate(lines_coords):
@@ -263,31 +262,31 @@ def is_crossing_line(p1, p2, line_p1, line_p2):
     return (ccw(p1, line_p1, line_p2) != ccw(p2, line_p1, line_p2)) and \
            (ccw(p1, p2, line_p1) != ccw(p1, p2, line_p2))
 
-if __name__ == "__main__":
-    video_path = "Cars.mp4"
-    model_path = "model/best.pt"
-    output_path = "hasil_deteksi_multi_garis.mp4"
+# if __name__ == "__main__":
+#     video_path = "Cars.mp4"
+#     model_path = "model/best.pt"
+#     output_path = "hasil_deteksi_multi_garis.mp4"
 
-    counts, per_line, events = jalankan_deteksi_dan_hitung(video_path, model_path, output_path)
+#     counts, per_line, events = jalankan_deteksi_dan_hitung(video_path, model_path, output_path)
 
-    print("\n=== HASIL COUNTING TOTAL ===")
-    for cls, val in counts.items():
-        print(f"   {cls}: {val}")
+#     print("\n=== HASIL COUNTING TOTAL ===")
+#     for cls, val in counts.items():
+#         print(f"   {cls}: {val}")
 
-    print("\n=== HASIL PER GARIS ===")
-    for i, val in enumerate(per_line):
-        print(f"   Garis {i+1}: {val}")
+#     print("\n=== HASIL PER GARIS ===")
+#     for i, val in enumerate(per_line):
+#         print(f"   Garis {i+1}: {val}")
 
-    print(f"\n=== CONTOH LOG EVENT (Total: {len(events)}) ===")
-    for event in events[:10]:
-        print(f"   {event}")
+#     print(f"\n=== CONTOH LOG EVENT (Total: {len(events)}) ===")
+#     for event in events[:10]:
+#         print(f"   {event}")
 
-    hasil_path = os.path.abspath("hasil_test")
-    print(f"\nVideo dan CSV disimpan di folder: {hasil_path}")
-    print("Membuka folder hasil...")
-    if sys.platform.startswith("win"):
-        os.startfile(hasil_path)
-    elif sys.platform == "darwin":
-        os.system(f"open '{hasil_path}'")
-    else:
-        os.system(f"xdg-open '{hasil_path}'")
+#     hasil_path = os.path.abspath("hasil_test")
+#     print(f"\nVideo dan CSV disimpan di folder: {hasil_path}")
+#     print("Membuka folder hasil...")
+#     if sys.platform.startswith("win"):
+#         os.startfile(hasil_path)
+#     elif sys.platform == "darwin":
+#         os.system(f"open '{hasil_path}'")
+#     else:
+#         os.system(f"xdg-open '{hasil_path}'")

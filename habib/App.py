@@ -19,9 +19,9 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 
 # --- Import fungsi deteksi ---
 try:
-    from testhitung import jalankan_deteksi_dan_hitung
+    from deteksihitungz import jalankan_deteksi_dan_hitung
 except ImportError:
-    print("Warning: testhitung.py tidak ditemukan. Menggunakan dummy.")
+    print("File deteksihitung tidak ditemukan")
     def jalankan_deteksi_dan_hitung(video_path, model_path, output_path, lines_coords, progress_callback):
         pass
 
@@ -633,6 +633,24 @@ class VideoPlayer(QWidget):
         self.media_player.durationChanged.connect(self.update_duration)
         self.media_player.stateChanged.connect(self.handle_state_changed)
 
+    # --- FUNGSI HELPER BARU (Tambahkan ini di dalam class VideoPlayer) ---
+    def get_result_path(self, video_path, suffix):
+        """
+        Mengubah path video input menjadi path file hasil di folder 'hasil_test'.
+        Contoh: C:/Video/Cars.mp4 -> hasil_test/Cars_hasil_log_detail.csv
+        """
+        if not video_path: return ""
+        
+        # 1. Ambil nama file asli (Cars.mp4)
+        filename = os.path.basename(video_path) 
+        
+        # 2. Buang ekstensinya (Cars)
+        base_name = os.path.splitext(filename)[0]
+        
+        # 3. Gabungkan dengan folder hasil_test DAN tambahkan "_hasil"
+        # Karena log menyimpan sebagai: Cars_hasil_log_detail.csv
+        return os.path.join("hasil_test", f"{base_name}_hasil{suffix}")
+
     def go_back(self):
         self.stacked.setCurrentIndex(0)
     
@@ -648,10 +666,15 @@ class VideoPlayer(QWidget):
             self.slider.setEnabled(True)
             self.play_video()
             self.reset_info_view()
-            self.load_csv_summary(file_name)
+            
+            # --- PERBAIKAN PATH DI SINI ---
             self.check_and_update_button(file_name)
-            base_name = os.path.splitext(file_name)[0]
-            log_path = f"{base_name}_log_detail.csv"
+            
+            # Gunakan helper untuk mencari log di hasil_test
+            log_path = self.get_result_path(file_name, "_log_detail.csv")
+            self.load_csv_summary(file_name) # Summary juga perlu perbaikan path di dalamnya
+            
+            # Load data ke widget traffic bawah
             self.traffic_widget.load_data(log_path)
 
     def reset_info_view(self):
@@ -664,10 +687,12 @@ class VideoPlayer(QWidget):
         self.info_label.setText("Status: Menunggu video...")
 
     def check_and_update_button(self, video_path):
-        base_name = os.path.splitext(video_path)[0]
-        log_path = f"{base_name}_log_detail.csv"
+        # --- PERBAIKAN PATH ---
+        log_path = self.get_result_path(video_path, "_log_detail.csv")
+        
         try: self.run_button.clicked.disconnect()
         except TypeError: pass 
+
         if os.path.exists(log_path):
             self.run_button.setText("Lihat Log")
             self.run_button.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
@@ -705,28 +730,27 @@ class VideoPlayer(QWidget):
         """
         Fungsi baru: Memuat grafik dari CSV Ringkasan
         """
-        base_video_path = os.path.splitext(video_path)[0]
-        csv_path = base_video_path + "_ringkasan.csv"
+        # --- PERBAIKAN PATH ---
+        csv_path = self.get_result_path(video_path, "_ringkasan.csv")
         
         if not os.path.exists(csv_path):
             self.chart_widget.setVisible(False)
             self.info_label.setVisible(True)
-            self.info_label.setText("Belum ada data ringkasan.")
+            # self.info_label.setText("Belum ada data ringkasan.") # Optional
             return
 
         # Sembunyikan teks status, tampilkan grafik
         self.info_label.setVisible(False)
         self.chart_widget.setVisible(True)
         
-        # Panggil fungsi update di class CanvasGrafik
-        # Pastikan file _ringkasan.csv memiliki format "=== DETAIL PER GARIS & KELAS ==="
-        # agar grafik bisa digambar sesuai logika CanvasGrafik
         self.chart_widget.update_data(csv_path)
 
     def load_log_to_table(self):
         if not self.current_video_path: return
-        base_name = os.path.splitext(self.current_video_path)[0]
-        log_path = f"{base_name}_log_detail.csv"
+        
+        # --- PERBAIKAN PATH ---
+        log_path = self.get_result_path(self.current_video_path, "_log_detail.csv")
+        
         if not os.path.exists(log_path): return
 
         self.table_csv.setRowCount(0)
@@ -739,14 +763,12 @@ class VideoPlayer(QWidget):
                     kelas = row.get('Jenis Kendaraan', '')
                     oid = row.get('ID Objek', '')
                     garis = row.get('Garis', '')
-                    # Simpan index baris asli di CSV untuk keperluan update nanti
                     row_data_list.append({'data': (waktu, kelas, oid, garis), 'raw': row})
             
             self.table_csv.setRowCount(len(row_data_list))
             for i, item in enumerate(row_data_list):
                 waktu, kelas, oid, garis = item['data']
                 
-                # --- Kolom Data ---
                 item_waktu = QTableWidgetItem(waktu)
                 ms_val = self.parse_timestamp_to_ms(waktu)
                 item_waktu.setData(Qt.UserRole, ms_val)
@@ -755,10 +777,8 @@ class VideoPlayer(QWidget):
                 self.table_csv.setItem(i, 2, QTableWidgetItem(oid))
                 self.table_csv.setItem(i, 3, QTableWidgetItem(garis))
 
-                # --- Kolom Tombol Edit (MODIFIKASI BARU) ---
                 btn_edit = QPushButton("Edit")
                 btn_edit.setStyleSheet("background-color: #f39c12; color: white; border: none; padding: 2px;")
-                # Gunakan lambda dengan argumen default untuk menangkap nilai i saat ini
                 btn_edit.clicked.connect(lambda checked, row=i: self.edit_vehicle_class(row))
                 self.table_csv.setCellWidget(i, 4, btn_edit)
 
@@ -823,10 +843,8 @@ class VideoPlayer(QWidget):
         """Mengupdate log CSV dan menghitung ulang summary."""
         if not self.current_video_path: return
 
-        base_name = os.path.splitext(self.current_video_path)[0]
-        log_path = f"{base_name}_log_detail.csv"
-        summary_path = f"{base_name}_ringkasan.csv"
-
+        log_path = self.get_result_path(self.current_video_path, "_log_detail.csv")
+        summary_path = self.get_result_path(self.current_video_path, "_ringkasan.csv")
         # 1. BACA SEMUA DATA LOG
         rows = []
         header = []
@@ -1009,15 +1027,15 @@ class VideoPlayer(QWidget):
     def on_detection_finished(self):
         self.info_label.setText("Selesai! Klik 'Lihat Log' untuk melihat detail.")
         self.info_progress.setValue(100)
+        self.run_button.setEnabled(True) # Jangan lupa enable tombol kembali
         
         if self.current_video_path:
             # Update Ringkasan (Grafik Atas)
             self.load_csv_summary(self.current_video_path)
             self.check_and_update_button(self.current_video_path)
             
-            # TAMBAHKAN INI: Update Traffic Analysis (Grafik Bawah)
-            base_name = os.path.splitext(self.current_video_path)[0]
-            log_path = f"{base_name}_log_detail.csv"
+            # --- PERBAIKAN PATH UNTUK TRAFFIC WIDGET ---
+            log_path = self.get_result_path(self.current_video_path, "_log_detail.csv")
             self.traffic_widget.load_data(log_path)
 
     def play_video(self): self.media_player.play()

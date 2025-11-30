@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 
 # Load model YOLOv8 nano (pretrained COCO)
-model = YOLO("besti.pt")
+model = YOLO("best.pt")
 
 # Buka file video
 video_path = "Cars.mp4"
