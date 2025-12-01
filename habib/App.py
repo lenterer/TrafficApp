@@ -113,15 +113,20 @@ class CanvasGrafik(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=80):
         # Membuat Figure
         self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.fig.patch.set_facecolor('#f0f0f0') 
+        
+        # --- UBAH BACKGROUND FIG (LUAR) KE GELAP ---
+        self.fig.patch.set_facecolor('#1e1e1e') 
         
         # --- KEMBALI KE LAYOUT AWAL (Split 3:1) ---
-        # Kiri (3) = Grafik, Kanan (1) = Teks Keterangan
         gs = self.fig.add_gridspec(1, 2, width_ratios=[3, 1])
         
         self.ax_grafik = self.fig.add_subplot(gs[0, 0]) # Axis Kiri
         self.ax_teks = self.fig.add_subplot(gs[0, 1])   # Axis Kanan
         
+        # --- UBAH BACKGROUND AXES (DALAM) KE GELAP ---
+        self.ax_grafik.set_facecolor('#1e1e1e')
+        self.ax_teks.set_facecolor('#1e1e1e')
+
         super(CanvasGrafik, self).__init__(self.fig)
         self.setMinimumHeight(200)
         
@@ -155,7 +160,8 @@ class CanvasGrafik(FigureCanvas):
             if not raw_data:
                 self.ax_grafik.clear()
                 self.ax_teks.clear()
-                self.ax_grafik.text(0.5, 0.5, "Data Kosong", ha='center')
+                # Teks Putih
+                self.ax_grafik.text(0.5, 0.5, "Data Kosong", ha='center', fontname='Segoe UI', color='white')
                 self.draw()
                 return
 
@@ -176,14 +182,18 @@ class CanvasGrafik(FigureCanvas):
             self.ax_teks.clear()
             self.bar_containers = []
             
+            # Reset warna background setelah clear()
+            self.ax_grafik.set_facecolor('#1e1e1e')
+            self.ax_teks.set_facecolor('#1e1e1e')
+            
             ax = self.ax_grafik 
             
-            # --- JUDUL PERSIS SEPERTI PROGRAM PERTAMA ---
-            # Menggunakan text manual agar posisi di kiri atas
+            # --- JUDUL (WARNA PUTIH) ---
             ax.text(0, 1.15, "Volume Kendaraan", 
-                    transform=ax.transAxes, fontsize=14, fontweight='bold', va='bottom')
+                    transform=ax.transAxes, fontsize=14, fontweight='bold', va='bottom', fontname='Segoe UI', color='white')
+            # Subjudul Abu-abu
             ax.text(0, 1.08, "Di update : Otomatis dari CSV", 
-                    transform=ax.transAxes, fontsize=9, color='#555555', va='bottom')
+                    transform=ax.transAxes, fontsize=9, color='#aaaaaa', va='bottom', fontname='Segoe UI')
 
             x = np.arange(jumlah_baris) 
             total_width = 0.8
@@ -197,46 +207,47 @@ class CanvasGrafik(FigureCanvas):
                 bars = ax.bar(posisi_bar, y_values, single_bar_width, label=kol_name, color=warna_bar)
                 self.bar_containers.append(bars)
 
-            # Styling Grafik
+            # Styling Grafik (WARNA PUTIH/ABU)
             ax.set_xticks(x)
-            ax.set_xticklabels(self.kategori, fontsize=9, fontweight='bold')
-            ax.tick_params(axis='y', labelsize=9)
+            ax.set_xticklabels(self.kategori, fontsize=9, fontweight='bold', fontname='Segoe UI', color='white')
+            ax.tick_params(axis='y', labelsize=9, colors='white') # Angka Y Putih
+            ax.tick_params(axis='x', colors='white')              # Garis Tick X Putih
             
-            # Legend Garis di atas tengah grafik
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, frameon=False, fontsize=8)
+            # Legend (Teks Putih)
+            legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3, frameon=False, fontsize=8)
+            for text in legend.get_texts():
+                text.set_color("white")
             
-            ax.yaxis.grid(True, color='#e0e0e0', linestyle='-', zorder=0)
+            # Grid Abu-abu Gelap
+            ax.yaxis.grid(True, color='#444444', linestyle='-', zorder=0)
             ax.set_axisbelow(True)
+            
+            # Hilangkan garis atas/kanan, ubah warna garis kiri/bawah jadi abu-abu
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#888888')
+            ax.spines['bottom'].set_color('#888888')
 
             # 4. GAMBAR KETERANGAN TEKS (DI KANAN / SIDEBAR)
             ax_t = self.ax_teks
-            ax_t.axis('off') # Matikan kotak garis pinggir
+            ax_t.axis('off') 
 
             list_info = [
-                "1: Sepeda Motor",
-                "2: Sedan, Jip, Pick Up",
-                "3: Minibus / Angkot",
-                "4: Pick Up Box",
-                "5a: Bus Kecil",
-                "5b: Bus Besar",
-                "6a: Truk Ringan 2S",
-                "6b: Truk Sedang 2S",
-                "7a: Truk 3 Sumbu",
-                "7b: Truk Gandeng",
-                "7c: Truk Semitrailer",
-                "8: Kendaraan Non-Motor"
+                "1: Sepeda Motor", "2: Sedan, Jeep", "3: Minibus / Angkot",
+                "4: Pick Up, Blindvan, mobil hantaran", "5a: Bus Kecil", "5b: Bus Besar",
+                "6a: Truk Ringan 2 Sumbu", "6b: Truk Sedang 2 Sumbu",
+                "7a: Truk 3 Sumbu", "7b: Truk Gandeng", "7c: Truk Semitrailer",
+                "8: Kendaraan Tidak Bermotor"
             ]
 
-            # Judul List
-            ax_t.text(0, 1.0, "KETERANGAN GOLONGAN:", fontweight='bold', fontsize=9)
+            # Judul List (Putih)
+            ax_t.text(0, 1.0, "KETERANGAN GOLONGAN:", fontweight='bold', fontsize=9, fontname='Segoe UI', color='white')
 
-            # Loop Isi List ke bawah
+            # Loop Isi List (Putih)
             posisi_y = 0.92 
             for info in list_info:
-                ax_t.text(0, posisi_y, info, fontsize=10, va='top')
-                posisi_y -= 0.08 # Jarak antar baris
+                ax_t.text(0, posisi_y, info, fontsize=10, va='top', color='white')
+                posisi_y -= 0.08 
 
             # Tooltip setup (Hidden awal)
             self.annot = ax.annotate("", xy=(0,0), xytext=(0,10),
@@ -245,20 +256,20 @@ class CanvasGrafik(FigureCanvas):
                                      arrowprops=dict(arrowstyle="->"))
             self.annot.set_visible(False)
 
-            # Margin Layout (Top agak besar buat Judul)
             self.fig.subplots_adjust(top=0.82, bottom=0.1, left=0.1, right=0.98, wspace=0.1)
             self.draw()
 
         except Exception as e:
             print(f"Error Grafik: {e}")
             self.ax_grafik.clear()
-            self.ax_grafik.text(0.5, 0.5, "Gagal Memuat Grafik", ha='center', color='red')
+            self.ax_grafik.text(0.5, 0.5, "Gagal Memuat Grafik", ha='center', color='red', fontname='Segoe UI')
             self.draw()
 
     def on_hover(self, event):
-        # Hanya respon jika mouse di area GRAFIK (Kiri), bukan area Teks (Kanan)
         if event.inaxes == self.ax_grafik:
             found = False
+            if self.annot is None: return # Mencegah error jika annot belum dibuat
+            
             for i, bars in enumerate(self.bar_containers):
                 for j, bar in enumerate(bars):
                     cont, _ = bar.contains(event)
@@ -299,41 +310,145 @@ class TrafficAnalysisWidget(QWidget):
         # --- 1. HEADER & TOOLBAR ---
         self.top_layout = QHBoxLayout()
         
-        self.lbl_judul = QLabel("ANALISIS WAKTU")
-        self.lbl_judul.setStyleSheet("font-weight: bold; color: #333;")
+        self.lbl_judul = QLabel("Analisis Waktu")
+        self.lbl_judul.setStyleSheet("font-weight: bold; color: white; font-family: 'Segoe UI'; border: none;")
         self.top_layout.addWidget(self.lbl_judul)
         
         self.top_layout.addSpacing(20)
 
+        # --- Style Dasar Label ---
+        style_label = "color: #e0e0e0; font-weight: bold; font-size: 13px; font-family: 'Segoe UI'; border: none;"
+
+ # --- Style Khusus ComboBox (Dropdown Dark Mode - FIXED) ---
+        style_combo = """
+            /* 1. Bagian Utama ComboBox */
+            QComboBox {
+                background-color: #333333;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 5px;
+                padding-left: 10px;
+                min-width: 10px;
+            }
+            
+            QComboBox:hover {
+                border: 1px solid #007acc; /* Border biru saat hover */
+                background-color: #3a3a3a;
+            }
+            
+            QComboBox:on { /* Saat menu terbuka */
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+            }
+
+            /* 2. Bagian Tombol Panah (Kanan) */
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                
+                border-left-width: 1px;
+                border-left-color: #555;
+                border-left-style: solid; /* Garis pemisah vertikal */
+                
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+                background-color: #333333; /* Pastikan background sama */
+            }
+
+            /* 3. Ikon Panah (Segitiga CSS) */
+            QComboBox::down-arrow {
+                image: none;
+                width: 0; 
+                height: 0;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #cccccc; /* Warna Panah Abu Terang */
+                margin-right: 2px;
+            }
+
+            /* 4. Daftar Pilihan (Popup List) */
+            QComboBox QAbstractItemView {
+                background-color: #2b2b2b;
+                color: white;
+                border: 1px solid #555;
+                selection-background-color: #007acc;
+                selection-color: white;
+                
+                /* INI SOLUSINYA: Hilangkan garis putus-putus oranye */
+                outline: 0px; 
+            }
+        """
+
+        # --- Style Khusus Tombol Interval (Toggle Dark Mode) ---
+        style_btn_interval = """
+            QPushButton {
+                background-color: #333333;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #444444;
+            }
+            QPushButton:checked {
+                background-color: #007acc; /* Biru saat aktif */
+                border: 1px solid #005a9e;
+                font-weight: bold;
+            }
+        """
+
+        # --- SETUP COMBOBOX GARIS ---
         self.combo_garis = QComboBox()
+        self.combo_garis.setStyleSheet(style_combo) # Terapkan Style
         self.combo_garis.addItems(["Semua"])
         self.combo_garis.currentIndexChanged.connect(self.update_chart)
-        self.top_layout.addWidget(QLabel("Garis:"))
+        
+        lbl_garis = QLabel("Garis:")
+        lbl_garis.setStyleSheet(style_label)
+        self.top_layout.addWidget(lbl_garis)
         self.top_layout.addWidget(self.combo_garis)
         
         self.top_layout.addSpacing(10)
 
+        # --- SETUP COMBOBOX KELAS ---
         self.combo_kelas = QComboBox()
+        self.combo_kelas.setStyleSheet(style_combo) # Terapkan Style
         self.combo_kelas.addItems(["Semua"])
         self.combo_kelas.currentIndexChanged.connect(self.update_chart)
-        self.top_layout.addWidget(QLabel("Kelas:"))
+        
+        lbl_kelas = QLabel("Kelas:")
+        lbl_kelas.setStyleSheet(style_label)
+        self.top_layout.addWidget(lbl_kelas)
         self.top_layout.addWidget(self.combo_kelas)
 
         self.top_layout.addSpacing(20)
 
+        # --- SETUP TOMBOL INTERVAL ---
         self.btn_5m = QPushButton("5m"); self.btn_5m.setCheckable(True)
         self.btn_10m = QPushButton("10m"); self.btn_10m.setCheckable(True)
         self.btn_30m = QPushButton("30m"); self.btn_30m.setCheckable(True)
         
+        # Terapkan Style ke semua tombol
+        self.btn_5m.setStyleSheet(style_btn_interval)
+        self.btn_10m.setStyleSheet(style_btn_interval)
+        self.btn_30m.setStyleSheet(style_btn_interval)
+        
         self.buttons = [self.btn_5m, self.btn_10m, self.btn_30m]
         self.intervals = [5, 10, 30]
         
-        self.top_layout.addWidget(QLabel("Interval:"))
+        lbl_interval = QLabel("Interval:")
+        lbl_interval.setStyleSheet(style_label)
+        self.top_layout.addWidget(lbl_interval)
+        
         for btn, interval in zip(self.buttons, self.intervals):
             btn.setFixedSize(40, 25)
             btn.clicked.connect(lambda checked, val=interval: self.set_interval(val))
             self.top_layout.addWidget(btn)
-        self.btn_5m.setChecked(True)
+        
+        self.btn_5m.setChecked(True) # Default aktif
 
         self.top_layout.addStretch()
         self.main_layout.addLayout(self.top_layout)
@@ -347,7 +462,36 @@ class TrafficAnalysisWidget(QWidget):
         self.main_layout.addWidget(self.canvas)
         
         self.ax = self.fig.add_subplot(111)
-        self.ax.text(0.5, 0.5, "Belum ada data", ha='center')
+        self.ax.text(0.5, 0.5, 
+            "Belum ada data", 
+            ha='center', 
+            va='center',       # Agar teks benar-benar di tengah vertikal
+            color='#cccccc',   # Warna abu-abu terang (lebih lembut dari putih murni)
+            fontsize=14,       # Ukuran font
+            fontweight='bold', # Tebal huruf (bold/normal/light)
+            fontname='Segoe UI' # Jenis font (samakan dengan UI aplikasi)
+        )
+
+        # --- SETUP DARK MODE UNTUK GRAFIK ---
+        # 1. Warna Background (Samakan dengan warna aplikasi #1e1e1e atau sedikit lebih terang #2c2c2c)
+        self.fig.patch.set_facecolor('#1e1e1e') 
+        self.ax.set_facecolor('#1e1e1e')
+
+        # 2. Warna Garis Sumbu (Spines) menjadi Putih/Abu-abu
+        self.ax.spines['bottom'].set_color('#aaaaaa')
+        self.ax.spines['top'].set_color('#aaaaaa')
+        self.ax.spines['left'].set_color('#aaaaaa')
+        self.ax.spines['right'].set_color('#aaaaaa')
+
+        # 3. Warna Teks Label & Tick (Angka) menjadi Putih
+        self.ax.tick_params(axis='x', colors='#cccccc')
+        self.ax.tick_params(axis='y', colors='#cccccc')
+        self.ax.yaxis.label.set_color('#cccccc')
+        self.ax.xaxis.label.set_color('#cccccc')
+        self.ax.title.set_color('#ffffff')
+
+        # 4. (Opsional) Grid Tipis agar terlihat modern
+        self.ax.grid(color='#444444', linestyle='--', linewidth=0.5, alpha=0.5)
 
     def load_data(self, csv_path):
         self.current_csv = csv_path
@@ -369,7 +513,7 @@ class TrafficAnalysisWidget(QWidget):
             if not all(col in self.df.columns for col in required_cols):
                 print("[TrafficWidget] Format CSV Log tidak sesuai.")
                 self.ax.clear()
-                self.ax.text(0.5, 0.5, "Format CSV Salah", ha='center')
+                self.ax.text(0.5, 0.5, "Format CSV Salah", ha='center', fontname='Segoe UI')
                 self.canvas.draw()
                 return
 
@@ -411,7 +555,7 @@ class TrafficAnalysisWidget(QWidget):
         self.ax.clear()
         
         if self.df.empty:
-            self.ax.text(0.5, 0.5, "Data Kosong / Tidak Ada File Log", ha='center', fontsize=9)
+            self.ax.text(0.5, 0.5, "Data Kosong / Tidak Ada File Log", ha='center', fontsize=9, fontname='Segoe UI', color='white')
             self.canvas.draw()
             return
 
@@ -427,7 +571,7 @@ class TrafficAnalysisWidget(QWidget):
             df_filtered = df_filtered[df_filtered['Jenis Kendaraan'] == pilihan_kelas]
 
         if df_filtered.empty:
-            self.ax.text(0.5, 0.5, "Tidak ada data pada filter ini", ha='center', fontsize=9)
+            self.ax.text(0.5, 0.5, "Tidak ada data pada filter ini", ha='center', fontsize=9, fontname='Segoe UI')
             self.canvas.draw()
             return
 
@@ -463,7 +607,7 @@ class TrafficAnalysisWidget(QWidget):
         self.ax.spines['right'].set_visible(False)
         
         self.ax.legend(loc='upper right', frameon=False, fontsize=8)
-        self.ax.set_title(f"Volume per {self.interval_menit} Menit", fontsize=10, fontweight='bold')
+        self.ax.set_title(f"Volume per {self.interval_menit} Menit", fontsize=10, fontweight='bold', color='white', fontname='Segoe UI')
         
         # PERBAIKAN: self.fig sekarang sudah didefinisikan di __init__
         self.fig.subplots_adjust(top=0.85, bottom=0.15, left=0.08, right=0.98)
@@ -473,35 +617,72 @@ class VideoPlayer(QWidget):
     def __init__(self, stacked):
         super().__init__()
         self.stacked = stacked
-        self.setWindowTitle("Aplikasi Deteksi & Counting Kendaraan")
-
-        # --- 1. SET MAXIMIZE & UKURAN LAYAR ---
-        self.setWindowState(Qt.WindowMaximized)
         
         rect = QApplication.desktop().availableGeometry()
         available_height = rect.height()
         
         # Tinggi Video & Ringkasan = 55% dari layar
-        self.target_height = int(available_height * 0.55)
+        self.target_height = int(available_height * 0.5)
 
         self.current_video_path = None
         self.is_showing_log = False 
 
-        self.layout = QVBoxLayout()
-        # Margin kecil agar rapi
-        self.layout.setContentsMargins(10, 10, 10, 10) 
-        self.layout.setSpacing(5) # Jarak antar elemen vertikal
+        # --- KONFIGURASI LAYOUT UTAMA ---
+        # Gunakan QVBoxLayout (Vertikal) sebagai layout utama halaman
+        self.layout = QVBoxLayout() 
+        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.layout.setSpacing(10)
         self.setLayout(self.layout)
-        
-        # Tombol Back
-        btn_back = QPushButton("← Back")
-        btn_back.setFixedHeight(40)
-        btn_back.clicked.connect(self.go_back)
-        self.layout.addWidget(btn_back, alignment=Qt.AlignLeft | Qt.AlignTop)
 
-        self.label_title = QLabel("", self)
-        self.label_title.setStyleSheet("color: white; background-color: #222; padding: 5px; font-size: 14px; font-weight: bold;")
-        self.label_title.setFixedHeight(30)
+        # --- 1. HEADER (TOMBOL BACK & JUDUL) ---
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(15) # Jarak antara tombol back dan judul
+
+        # A. Tombol Back (Dark Mode)
+        self.btn_back = QPushButton("← Back")
+        self.btn_back.setFixedSize(80, 35)
+        self.btn_back.setCursor(Qt.PointingHandCursor)
+        self.btn_back.clicked.connect(self.go_back)
+        
+        self.btn_back.setStyleSheet("""
+            QPushButton {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                border: 1px solid #3e3e3e;
+                border-radius: 6px;
+                font-weight: bold;
+                font-family: 'Segoe UI';
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a;
+                border: 1px solid #555;
+                color: white;
+            }
+            QPushButton:pressed {
+                background-color: #151515;
+            }
+        """)
+
+        # B. Label Judul Video (Tanpa Border/Background)
+        self.label_title = QLabel("")
+        self.label_title.setStyleSheet("""
+            color: #ffffff;
+            font-family: 'Segoe UI';
+            font-size: 16px;
+            font-weight: bold;
+            background: transparent; /* Hilangkan kotak abu-abu */
+            border: none;            /* Hilangkan border */
+            padding-left: 5px;
+        """)
+        self.label_title.setFixedHeight(35) # Samakan tinggi dengan tombol
+
+        # Masukkan ke Header Layout
+        header_layout.addWidget(self.btn_back)
+        header_layout.addWidget(self.label_title)
+        header_layout.addStretch() # Dorong semuanya ke kiri
+
+        # Masukkan Header ke Layout Utama
+        self.layout.addLayout(header_layout)
 
         # --- SETUP CONTROLS (Tombol Bawah) ---
         self.controls_layout = QHBoxLayout()
@@ -510,12 +691,63 @@ class VideoPlayer(QWidget):
         self.btn_pause = QPushButton("Pause")
         self.btn_stop = QPushButton("Stop")
         self.run_button = QPushButton("Run") 
-        self.run_button.setStyleSheet("QPushButton { background-color: #3498db; color: white; font-weight: bold; } QPushButton:hover { background-color: #2980b9; }")
         self.btn_draw = QPushButton("Draw Line")
         self.btn_clear = QPushButton("Clear Line")
 
-        for btn in [self.btn_open, self.btn_play, self.btn_pause, self.btn_stop, self.run_button, self.btn_draw, self.btn_clear]:
-            btn.setFixedSize(90, 30)
+        style_btn_dark = """
+            QPushButton {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                border: 1px solid #3e3e3e;
+                border-radius: 6px;
+                font-family: 'Segoe UI';
+                font-size: 13px;
+                font-weight: 600;
+                padding: 6px 12px;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a; /* Lebih terang saat hover */
+                border: 1px solid #555;
+                color: #ffffff;
+            }
+            QPushButton:pressed {
+                background-color: #151515; /* Lebih gelap saat ditekan */
+            }
+            QPushButton:checked {
+                background-color: #005a9e; /* Khusus tombol Draw saat aktif */
+                border: 1px solid #007acc;
+                color: white;
+            }
+        """
+
+        # Terapkan style dark ke tombol-tombol standar
+        self.btn_open.setStyleSheet(style_btn_dark)
+        self.btn_play.setStyleSheet(style_btn_dark)
+        self.btn_pause.setStyleSheet(style_btn_dark)
+        self.btn_stop.setStyleSheet(style_btn_dark)
+        self.btn_draw.setStyleSheet(style_btn_dark)
+        self.btn_clear.setStyleSheet(style_btn_dark)
+
+        # 3. Style Khusus Tombol UTAMA (Run / Lihat Log)
+        # Kita buat warnanya Biru/Hijau mencolok tapi tetap modern
+        self.run_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0078d4; /* Biru Windows 11 */
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-family: 'Segoe UI';
+                font-weight: bold;
+                font-size: 13px;
+                padding: 6px 15px;
+            }
+            QPushButton:hover {
+                background-color: #0063b1;
+            }
+            QPushButton:pressed {
+                background-color: #004e8c;
+            }
+        """)
 
         self.controls_layout.addStretch()
         self.controls_layout.addWidget(self.btn_open)
@@ -535,17 +767,35 @@ class VideoPlayer(QWidget):
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         
         # --- 2. SETUP VIDEO (KIRI) ---
+        # --- 2. SETUP VIDEO (KIRI) ---
         self.video_widget = MyVideoWidget()
         self.video_widget.setMediaPlayer(self.media_player)
         self.video_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.video_widget.setMinimumHeight(self.target_height)
+        self.video_widget.setMinimumHeight(500)
+        
+        # --- TAMBAHKAN STYLE INI UNTUK ROUNDED BORDER ---
+        self.video_widget.setStyleSheet("""
+            QGraphicsView {
+                border: 1px solid #333;  /* Garis tepi tipis warna abu gelap */
+                border-radius: 15px;     /* Membuat sudut melengkung */
+                background-color: black; /* Pastikan background hitam */
+            }
+        """)
+        # -----------------------------------------------
 
         self.progress_layout = QHBoxLayout()
+        
+        # --- Bagian label (Kode Anda sebelumnya) ---
         self.label_current = QLabel("00:00:00")
+        self.label_current.setStyleSheet("color: #ffffff; font-weight: bold; font-family: 'Segoe UI'; border: none;") 
+        
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(0, 1000)
         self.slider.setEnabled(False)
+        
         self.label_total = QLabel("00:00:00")
+        self.label_total.setStyleSheet("color: #ffffff; font-weight: bold; font-family: 'Segoe UI'; border: none;")
+        
         self.progress_layout.addWidget(self.label_current)
         self.progress_layout.addWidget(self.slider, stretch=1)
         self.progress_layout.addWidget(self.label_total)
@@ -555,13 +805,13 @@ class VideoPlayer(QWidget):
         self.right_panel_layout = QVBoxLayout(self.right_panel_widget)
         self.right_panel_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.lbl_info_header = QLabel("INFORMASI DETEKSI")
+        self.lbl_info_header = QLabel("Informasi Deteksi")
         self.lbl_info_header.setAlignment(Qt.AlignCenter)
-        self.lbl_info_header.setStyleSheet("font-weight: bold; color: black; margin-bottom: 5px;")
+        self.lbl_info_header.setStyleSheet("font-weight: bold; color: white; margin-bottom: 5px; font-family: 'Segoe UI'; border: none;")
         self.lbl_info_header.setFixedHeight(25)
 
         self.info_label = QLabel("Status: Menunggu video...")
-        self.info_label.setStyleSheet("font-size: 14px; color: white; background-color: #333; padding: 10px; border-radius: 4px;")
+        self.info_label.setStyleSheet("font-weight: bold; font-size: 14px; color: white; background-color: #333; padding: 10px; border-radius: 4px; font-family: 'Segoe UI'")
         self.info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.info_label.setWordWrap(True)
         self.info_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -587,13 +837,30 @@ class VideoPlayer(QWidget):
         self.info_progress.setValue(0)
         self.info_progress.setFixedHeight(15)
 
+        self.info_progress.setStyleSheet("""
+            QProgressBar {
+                border: none;
+                background-color: #333333; /* Warna Background Batang Kosong */
+                border-radius: 5px;
+                color: #ffffff;            /* <--- INI KUNCINYA (Warna Teks Putih) */
+                text-align: center;        /* Opsi: Menaruh teks di tengah batang agar lebih rapi */
+                font-weight: bold;
+                font-family: Segoe UI;
+            }
+            QProgressBar::chunk {
+                background-color: #27ae60; /* Warna Hijau (sesuai screenshot Anda) */
+                border-radius: 5px;
+            }
+        """)
+
         self.right_panel_layout.addWidget(self.lbl_info_header)
         self.right_panel_layout.addWidget(self.info_label)
         self.right_panel_layout.addWidget(self.chart_widget)
         self.right_panel_layout.addWidget(self.table_csv)
         self.right_panel_layout.addWidget(self.info_progress)
         
-        self.right_panel_widget.setMinimumHeight(self.target_height)
+        self.right_panel_widget.setMinimumHeight(500)
+        # self.right_panel_widget.setMinimumHeight(self.target_height)
 
         # --- 4. GABUNGKAN LAYOUT TENGAH (VIDEO + RINGKASAN) ---
         self.video_info_layout = QHBoxLayout()
@@ -610,7 +877,7 @@ class VideoPlayer(QWidget):
         self.traffic_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
         # PENTING: Hapus setMaximumHeight agar tidak dibatasi
-        # self.traffic_widget.setMaximumHeight(300) <--- DIBUANG
+        self.traffic_widget.setMaximumHeight(300) # <--- DIBUANG
         
         # Tambahkan ke layout (stretch=1 agar mengambil sisa ruang)
         self.layout.addWidget(self.traffic_widget, stretch=1)
@@ -635,6 +902,24 @@ class VideoPlayer(QWidget):
 
     # --- FUNGSI HELPER BARU (Tambahkan ini di dalam class VideoPlayer) ---
     def get_result_path(self, video_path, suffix):
+        """
+        Logika Satu CSV untuk Semua:
+        1. Cars.mp4       -> Root: Cars       -> CSV: Cars_hasil...
+        2. Cars_hasil.mp4 -> Root: Cars       -> CSV: Cars_hasil...
+        """
+        if not video_path: return ""
+        
+        filename = os.path.basename(video_path)
+        base_name = os.path.splitext(filename)[0]
+        
+        # 1. BERSIHKAN: Jika nama file sudah mengandung '_hasil' di belakang, buang dulu.
+        if base_name.endswith("_hasil"):
+            clean_name = base_name[:-6] # Buang 6 karakter terakhir ("_hasil")
+        else:
+            clean_name = base_name
+            
+        # 2. BENTUK ULANG: Selalu gunakan format [NamaBersih]_hasil[Suffix]
+        return os.path.join("hasil_test", f"{clean_name}_hasil{suffix}")
         """
         Mengubah path video input menjadi path file hasil di folder 'hasil_test'.
         Contoh: C:/Video/Cars.mp4 -> hasil_test/Cars_hasil_log_detail.csv
@@ -693,36 +978,88 @@ class VideoPlayer(QWidget):
         try: self.run_button.clicked.disconnect()
         except TypeError: pass 
 
+        # --- DEFINISI BENTUK TOMBOL (AGAR KONSISTEN) ---
+        # Kita simpan style bentuk di sini agar tidak hilang saat ganti warna
+        base_shape = """
+            color: white;
+            border: none;
+            border-radius: 6px; /* INI KUNCINYA (Membuat sudut tumpul) */
+            font-family: 'Segoe UI';
+            font-weight: bold;
+            font-size: 13px;
+            padding: 6px 15px;
+        """
+
         if os.path.exists(log_path):
             self.run_button.setText("Lihat Log")
-            self.run_button.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
+            # Gabungkan Bentuk + Warna Hijau
+            self.run_button.setStyleSheet(f"""
+                QPushButton {{
+                    {base_shape}
+                    background-color: #27ae60; 
+                }}
+                QPushButton:hover {{ background-color: #219150; }}
+            """)
             self.run_button.clicked.connect(self.toggle_log_view)
         else:
             self.run_button.setText("Run")
-            self.run_button.setStyleSheet("background-color: #3498db; color: white; font-weight: bold;")
+            # Gabungkan Bentuk + Warna Biru
+            self.run_button.setStyleSheet(f"""
+                QPushButton {{
+                    {base_shape}
+                    background-color: #3498db;
+                }}
+                QPushButton:hover {{ background-color: #2980b9; }}
+            """)
             self.run_button.clicked.connect(self.run_detection)
             self.info_label.setText("Status: Video siap diproses.\nSilakan gambar garis lalu klik Run.")
 
     def toggle_log_view(self):
+        # --- DEFINISI BENTUK TOMBOL (SAMA SEPERTI DI ATAS) ---
+        base_shape = """
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Segoe UI';
+            font-weight: bold;
+            font-size: 13px;
+            padding: 6px 15px;
+        """
+
         if not self.is_showing_log:
             # MODE: LIHAT LOG DETAIL (Tabel)
             self.load_log_to_table()
             self.info_label.setVisible(False)
-            self.chart_widget.setVisible(False) # Sembunyikan Grafik
-            self.table_csv.setVisible(True)     # Tampilkan Tabel
+            self.chart_widget.setVisible(False) 
+            self.table_csv.setVisible(True)     
             
             self.run_button.setText("Ringkasan")
-            self.run_button.setStyleSheet("background-color: #e67e22; color: white; font-weight: bold;")
+            # Gabungkan Bentuk + Warna Orange
+            self.run_button.setStyleSheet(f"""
+                QPushButton {{
+                    {base_shape}
+                    background-color: #e67e22;
+                }}
+                QPushButton:hover {{ background-color: #d35400; }}
+            """)
+            
             self.lbl_info_header.setText("LOG DETAIL KENDARAAN")
             self.is_showing_log = True
         else:
             # MODE: LIHAT RINGKASAN (Grafik)
-            self.load_csv_summary(self.current_video_path) # Load ulang grafik
-            self.table_csv.setVisible(False)    # Sembunyikan Tabel
-            # (Visibility grafik & label diatur di dalam load_csv_summary)
+            self.load_csv_summary(self.current_video_path) 
+            self.table_csv.setVisible(False)    
             
             self.run_button.setText("Lihat Log")
-            self.run_button.setStyleSheet("background-color: #27ae60; color: white; font-weight: bold;")
+            # Gabungkan Bentuk + Warna Hijau
+            self.run_button.setStyleSheet(f"""
+                QPushButton {{
+                    {base_shape}
+                    background-color: #27ae60;
+                }}
+                QPushButton:hover {{ background-color: #219150; }}
+            """)
+            
             self.lbl_info_header.setText("GRAFIK VOLUME")
             self.is_showing_log = False
 
@@ -1013,16 +1350,32 @@ class VideoPlayer(QWidget):
         self.info_progress.setValue(0)
         self.run_button.setEnabled(False)
         
-        # Setting Path
-        model_path = "model/best.pt"
-        base_name = os.path.splitext(self.current_video_path)[0]
-        output_path = f"{base_name}_hasil.mp4"
+        input_filename = os.path.basename(self.current_video_path)
+        base_name = os.path.splitext(input_filename)[0]
 
-        # Jalankan Worker dengan koordinat yang SUDAH DISKALA (raw_lines)
-        self.worker = DetectionWorker(self.current_video_path, model_path, output_path, raw_lines)
+        # BERSIHKAN nama juga disini (Sama seperti get_result_path)
+        # Agar output tidak menjadi 'Cars_hasil_hasil.mp4'
+        if base_name.endswith("_hasil"):
+            clean_name = base_name[:-6]
+        else:
+            clean_name = base_name
+
+        # Setting Path Output
+        model_path = "model/best.pt"
+        # Output video selalu: [NamaBersih]_hasil.mp4
+        output_path = os.path.join("hasil_test", f"{clean_name}_hasil.mp4")
+
+        # Pastikan folder hasil_test ada
+        if not os.path.exists("hasil_test"):
+            os.makedirs("hasil_test")
+
+        # --- Akhir Perubahan Penamaan ---
+
+        # Jalankan Worker (Gunakan output_path yang baru)
+        self.worker = DetectionWorker(self.current_video_path, model_path, output_path, raw_lines) # Pastikan raw_lines sudah dihitung skala (kode sebelumnya)
         self.worker.progress_changed.connect(self.info_progress.setValue)
         self.worker.finished.connect(self.on_detection_finished)
-        self.worker.start()
+        self.worker.start()        # Setting Path
 
     def on_detection_finished(self):
         self.info_label.setText("Selesai! Klik 'Lihat Log' untuk melihat detail.")

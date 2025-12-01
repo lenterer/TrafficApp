@@ -11,7 +11,7 @@ import os
 import cv2
 import time
 
-from Appz import VideoPlayer
+from App import VideoPlayer
 
 class TutorialDialog(QDialog):
     def __init__(self, parent=None):
@@ -52,7 +52,7 @@ class TutorialDialog(QDialog):
 
         # --- KONTEN ---
         self.lbl_title = QLabel()
-        self.lbl_title.setStyleSheet("font-size: 20px; font-weight: bold; color: white; border: none; background: transparent;")
+        self.lbl_title.setStyleSheet("font-size: 20px; font-weight: bold; color: white; border: none; background: transparent; font-family: Segoe UI")
         self.lbl_title.setAlignment(Qt.AlignCenter)
         self.lbl_title.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
@@ -65,20 +65,20 @@ class TutorialDialog(QDialog):
         self.lbl_text = QLabel()
         self.lbl_text.setWordWrap(True)
         self.lbl_text.setAlignment(Qt.AlignCenter)
-        self.lbl_text.setStyleSheet("font-size: 14px; color: #cccccc; border: none; background: transparent; margin-top: 10px;")
+        self.lbl_text.setStyleSheet("font-size: 14px; font-family: 'Segoe UI'; color: #cccccc; border: none; background: transparent; margin-top: 10px;")
         self.lbl_text.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         self.btn_layout = QHBoxLayout()
         self.btn_prev = QPushButton("← Sebelumnya")
         self.btn_prev.clicked.connect(self.prev_step)
-        self.btn_prev.setStyleSheet("background: transparent; color: #888; font-weight: bold; text-align: left;")
+        self.btn_prev.setStyleSheet("background: transparent; color: #888; font-weight: bold; text-align: left; font-family: 'Segoe UI';")
         self.btn_prev.setCursor(Qt.PointingHandCursor)
         
         self.btn_next = QPushButton("Lanjut →")
         self.btn_next.clicked.connect(self.next_step)
         self.btn_next.setFixedSize(120, 40)
         self.btn_next.setCursor(Qt.PointingHandCursor)
-        self.btn_next.setStyleSheet("QPushButton { background-color: #007acc; color: white; border-radius: 20px; font-weight: bold; } QPushButton:hover { background-color: #005f99; }")
+        self.btn_next.setStyleSheet("QPushButton { font-family: 'Segoe UI'; background-color: #007acc; color: white; border-radius: 20px; font-weight: bold; } QPushButton:hover { background-color: #005f99; }")
 
         self.btn_layout.addWidget(self.btn_prev)
         self.btn_layout.addStretch()
@@ -152,10 +152,10 @@ class TutorialDialog(QDialog):
         
         if self.current_step == len(self.steps) - 1:
             self.btn_next.setText("Selesai")
-            self.btn_next.setStyleSheet("background-color: #27ae60; color: white; border-radius: 20px; font-weight: bold;")
+            # self.btn_next.setStyleSheet("background-color: #27ae60; color: white; border-radius: 20px; font-weight: bold;")
         else:
             self.btn_next.setText("Lanjut →")
-            self.btn_next.setStyleSheet("background-color: #007acc; color: white; border-radius: 20px; font-weight: bold;")
+            # self.btn_next.setStyleSheet("background-color: #007acc; color: white; border-radius: 20px; font-weight: bold;")
 
     def next_step(self):
         if self.current_step < len(self.steps) - 1:
@@ -198,15 +198,15 @@ class CustomTitleBar(QFrame):
             self.icon_label.setText("🚀")
 
         # --- 2. JUDUL APLIKASI ---
-        self.title_label = QLabel("TRAFFICVISION")
-        self.title_label.setStyleSheet("""
-            color: #eeeeee; 
-            font-weight: bold; 
-            font-family: 'Segoe UI', Arial; 
-            font-size: 14px; 
-            border: none; 
-            background: transparent;
-        """)
+        # self.title_label = QLabel("TRAFFICVISION")
+        # self.title_label.setStyleSheet("""
+        #     color: #eeeeee; 
+        #     font-weight: bold; 
+        #     font-family: 'Segoe UI', Arial; 
+        #     font-size: 14px; 
+        #     border: none; 
+        #     background: transparent;
+        # """)
 
         # --- 3. TOMBOL KONTROL WINDOW ---
         # Fungsi helper untuk membuat tombol seragam
@@ -243,7 +243,7 @@ class CustomTitleBar(QFrame):
 
         # --- MENYUSUN LAYOUT ---
         layout.addWidget(self.icon_label)
-        layout.addWidget(self.title_label)
+        # layout.addWidget(self.title_label)
         
         layout.addStretch() # Mendorong tombol ke pojok kanan
         
@@ -583,22 +583,6 @@ class HomePage(QWidget):
     def on_tutorial_closed(self):
         self.tutorial_dialog = None
 
-class NewVideoPage(QWidget):
-    def __init__(self, stacked):
-        super().__init__()
-        layout = QVBoxLayout()
-        lbl = QLabel("New Video Page")
-        lbl.setFont(QFont("Arial", 22))
-        lbl.setAlignment(Qt.AlignCenter)
-
-        back = QPushButton("← Back")
-        back.clicked.connect(lambda: stacked.setCurrentIndex(0))
-
-        layout.addWidget(lbl)
-        layout.addWidget(back, alignment=Qt.AlignCenter)
-        self.setLayout(layout)
-
-
 class ResultsPage(QWidget):
     def __init__(self, stacked):
         super().__init__()
@@ -608,16 +592,41 @@ class ResultsPage(QWidget):
 
         # Back button di pojok kiri atas
         btn_layout = QHBoxLayout()
+        
         back_btn = QPushButton("← Back")
-        back_btn.setFixedSize(120, 50)
+        back_btn.setFixedSize(80, 35) # Sedikit dipertinggi agar proporsional
+        back_btn.setCursor(Qt.PointingHandCursor) # Ubah kursor jadi tangan saat hover
         back_btn.clicked.connect(lambda: self.stacked.setCurrentIndex(0))
+        
+        # --- STYLE DARK MODE ---
+        back_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                border: 1px solid #3e3e3e;
+                border-radius: 6px;
+                font-family: 'Segoe UI';
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a; /* Lebih terang saat mouse lewat */
+                border: 1px solid #555;
+                color: white;
+            }
+            QPushButton:pressed {
+                background-color: #151515; /* Lebih gelap saat ditekan */
+            }
+        """)
+        # -----------------------
+
         btn_layout.addWidget(back_btn, alignment=Qt.AlignLeft)
         btn_layout.addStretch()
         layout.addLayout(btn_layout)
 
         # Label Judul
         title = QLabel("List of Video Results")
-        title.setFont(QFont("Arial", 26, QFont.Bold))
+        title.setStyleSheet("color: white; font-family: 'Segoe UI'; font-size: 26px; font-weight: bold; border: none;")
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
@@ -631,6 +640,30 @@ class ResultsPage(QWidget):
         self.video_list.setGridSize(QSize(260, 200))
         self.video_list.itemDoubleClicked.connect(self.open_video)
         layout.addWidget(self.video_list)
+
+        # --- PERBAIKAN STYLE ---
+        self.video_list.setStyleSheet("""
+            QListWidget {
+                background-color: transparent;
+                border: none;
+            }
+            QListWidget::item {
+                background-color: transparent;
+                color: #e0e0e0; /* WARNA PUTIH KEKUNINGAN (Terang) */
+                border-radius: 10px;
+                padding: 10px;
+                font-family: 'Segoe UI';
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QListWidget::item:hover {
+                background-color: #333333;
+            }
+            QListWidget::item:selected {
+                background-color: #007acc; /* Biru saat dipilih */
+                color: white;
+            }
+        """)
 
         # Folder hasil
         self.results_folder = "hasil_test"
