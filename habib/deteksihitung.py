@@ -72,8 +72,6 @@ def jalankan_deteksi_dan_hitung(video_path, model_path, output_path="hasil.mp4",
     counted_ids_per_line = [set() for _ in lines_coords]
     counts_per_line = [0] * len(lines_coords)
     
-    # === [MODIFIKASI 1] Variabel baru untuk menghitung per Garis DAN per Kelas ===
-    # Struktur: { indeks_garis: { '1': 0, '2': 0, ... }, ... }
     counts_detailed = {i: {cls: 0 for cls in CLASS_NAMES} for i in range(len(lines_coords))}
     # ============================================================================
 

@@ -28,7 +28,7 @@ class TutorialDialog(QDialog):
 
         # Data Tutorial (Sama seperti sebelumnya)
         self.steps = [
-            {"title": "Selamat Datang di TrafficVision!", "text": "Aplikasi ini membantu Anda mendeteksi dan menghitung volume kendaraan secara otomatis menggunakan AI.", "image": "desain/step1.png"},
+            {"title": "Selamat Datang di TrafficApp!", "text": "Aplikasi ini membantu Anda mendeteksi dan menghitung volume kendaraan secara otomatis menggunakan AI.", "image": "desain/step1.png"},
             {"title": "Langkah 1: Buka Video", "text": "Klik tombol 'New Video' di halaman utama, lalu pilih file CCTV (mp4/avi) dari komputer Anda.", "image": "desain/step2.png"},
             {"title": "Langkah 2: Gambar Garis Deteksi", "text": "Klik tombol 'Draw Line', lalu tarik garis di jalan pada video. Kendaraan yang melewati garis ini akan dihitung.", "image": "desain/step3.png"},
             {"title": "Langkah 3: Jalankan Deteksi", "text": "Klik tombol 'Run'. Sistem AI akan mulai memproses. Anda bisa melihat log detail setelah proses selesai.", "image": "desain/step4.png"}
@@ -429,7 +429,7 @@ class SplashScreen(QWidget):
         elif value < 40: self.lbl_desc.setText("Loading PyTorch & YOLO libraries...")
         elif value < 70: self.lbl_desc.setText("Preparing graphical interface...")
         elif value < 90: self.lbl_desc.setText("Checking GPU drivers...")
-        else: self.lbl_desc.setText("Done! Launching TrafficVision...")
+        else: self.lbl_desc.setText("Done! Launching TrafficApp...")
 
 class HomePage(QWidget):
     def __init__(self, stacked):
