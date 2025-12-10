@@ -17,157 +17,273 @@ class TutorialDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent_window = parent
-        self.setWindowTitle("Tutorial Penggunaan")
+        self.setWindowTitle("Panduan Penggunaan")
         
-        # Setup Window
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog) 
+        # Setup Window Tanpa Bingkai
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # Hitung ukuran awal
-        self.update_geometry_to_parent()
+        # ==========================================
+        # 1. DEFINISI DATA (WAJIB PALING ATAS)
+        # ==========================================
+        self.tutorial_data = {
+            "Panduan Deteksi": [
+                {"title": "Selamat Datang di TrafficApp!", "text": "Aplikasi cerdas untuk mendeteksi dan menghitung volume kendaraan secara otomatis menggunakan teknologi AI.", "image": "desain/logonobg.png"},
+                {"title": "Langkah 1: Mulai Proyek Baru", "text": "Klik tombol 'New Analysis' di menu utama, lalu pilih file rekaman CCTV (format mp4/avi) dari komputer Anda.", "image": "desain/tutorial/1q.png"},
+                {"title": "Langkah 2: Aktifkan Mode Gambar", "text": "Sebelum memproses, kita perlu menentukan area hitung. Klik tombol 'Draw Line' untuk mulai membuat garis.", "image": "desain/tutorial/2q.png"},
+                {"title": "Langkah 3: Tarik Garis Deteksi", "text": "Tarik garis lurus melintasi jalan pada video. Tips: Letakkan garis di area yang paling jelas terlihat kamera.", "image": "desain/tutorial/3q.png"},
+                {"title": "Langkah 4: Mulai Analisis", "text": "Setelah garis terpasang, klik tombol 'Run'. Sebuah jendela konfirmasi akan muncul berisi estimasi waktu.", "image": "desain/tutorial/4q.png"},
+                {"title": "Langkah 5: Konfirmasi", "text": "Pastikan detail sudah benar. Klik 'Yes' untuk memerintahkan AI mulai memproses video tersebut.", "image": "desain/tutorial/5.png"},
+                {"title": "Langkah 6: Tunggu Proses", "text": "Sistem sedang bekerja. Anda dapat memantau kemajuan analisis melalui indikator persen di pojok kanan bawah.", "image": "desain/tutorial/6q.png"},
+                {"title": "Langkah 7: Selesai!", "text": "Analisis selesai! Grafik volume kendaraan dan data log kini siap untuk Anda lihat dan analisis.", "image": "desain/tutorial/7.jpg"}
+            ],
+            "Melihat Riwayat": [
+                {"title": "Menu Riwayat", "text": "Setelah pendeteksian selesai, riwayat pendeteksian akan otomatis tersimpan. Klik menu 'View History' di halaman depan.", "image": "desain/tutorial/h.png"},
+                {"title": "Pilih File Video", "text": "Pilih file video hasil pendeteksian yang ingin Anda lihat kembali dari daftar yang tersedia.", "image": "desain/tutorial/h1.png"},
+                {"title": "Analisis Data", "text": "Grafik volume kendaraan dan data log dari video yang dipilih akan ditampilkan kembali secara lengkap.", "image": "desain/tutorial/h2.png"}
+            ],
+            "Mengedit Kelas": [
+                {"title": "Buka Log Detail", "text": "Jika ada kesalahan deteksi, Anda bisa mengoreksinya. Tekan tombol 'Lihat Log' berwarna hijau di panel kontrol.", "image": "desain/tutorial/l1.png"},
+                {"title": "Ubah Data", "text": "Klik tombol 'Edit' pada baris kendaraan yang salah, lalu pilih jenis kendaraan yang benar dari dropdown.", "image": "desain/tutorial/l2.png"}
+            ]
+        }
 
-        # Data Tutorial (Sama seperti sebelumnya)
-        self.steps = [
-            {"title": "Selamat Datang di TrafficApp!", "text": "Aplikasi ini membantu Anda mendeteksi dan menghitung volume kendaraan secara otomatis menggunakan AI.", "image": "desain/step1.png"},
-            {"title": "Langkah 1: Buka Video", "text": "Klik tombol 'New Video' di halaman utama, lalu pilih file CCTV (mp4/avi) dari komputer Anda.", "image": "desain/step2.png"},
-            {"title": "Langkah 2: Gambar Garis Deteksi", "text": "Klik tombol 'Draw Line', lalu tarik garis di jalan pada video. Kendaraan yang melewati garis ini akan dihitung.", "image": "desain/step3.png"},
-            {"title": "Langkah 3: Jalankan Deteksi", "text": "Klik tombol 'Run'. Sistem AI akan mulai memproses. Anda bisa melihat log detail setelah proses selesai.", "image": "desain/step4.png"}
-        ]
-        self.current_step = 0
+        # State Awal (Inisialisasi variabel SEBELUM UI dibuat)
+        self.current_category = "Panduan Deteksi" 
+        self.current_steps_list = self.tutorial_data[self.current_category]
+        self.current_step_idx = 0
 
-        # --- LAYOUT UTAMA ---
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(10, 10, 10, 10) 
+        # ==========================================
+        # 2. SETUP UI
+        # ==========================================
+        self.setup_ui()
 
-        self.container = QFrame()
-        self.container.setStyleSheet("QFrame { background-color: #1e1e1e; border: 1px solid #333; border-radius: 20px; }")
-        
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(20)
-        shadow.setColor(QColor(0,0,0, 150))
-        self.container.setGraphicsEffect(shadow)
-
-        self.inner_layout = QVBoxLayout(self.container)
-        self.inner_layout.setContentsMargins(30, 30, 30, 30)
-
-        # --- KONTEN ---
-        self.lbl_title = QLabel()
-        self.lbl_title.setStyleSheet("font-size: 20px; font-weight: bold; color: white; border: none; background: transparent; font-family: Segoe UI")
-        self.lbl_title.setAlignment(Qt.AlignCenter)
-        self.lbl_title.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-
-        self.lbl_image = QLabel()
-        self.lbl_image.setAlignment(Qt.AlignCenter)
-        self.lbl_image.setStyleSheet("background-color: #2c2c2c; border-radius: 10px; border: 1px solid #444;")
-        self.lbl_image.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) 
-        self.lbl_image.setMinimumSize(200, 150)
-
-        self.lbl_text = QLabel()
-        self.lbl_text.setWordWrap(True)
-        self.lbl_text.setAlignment(Qt.AlignCenter)
-        self.lbl_text.setStyleSheet("font-size: 14px; font-family: 'Segoe UI'; color: #cccccc; border: none; background: transparent; margin-top: 10px;")
-        self.lbl_text.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-
-        self.btn_layout = QHBoxLayout()
-        self.btn_prev = QPushButton("← Sebelumnya")
-        self.btn_prev.clicked.connect(self.prev_step)
-        self.btn_prev.setStyleSheet("background: transparent; color: #888; font-weight: bold; text-align: left; font-family: 'Segoe UI';")
-        self.btn_prev.setCursor(Qt.PointingHandCursor)
-        
-        self.btn_next = QPushButton("Lanjut →")
-        self.btn_next.clicked.connect(self.next_step)
-        self.btn_next.setFixedSize(120, 40)
-        self.btn_next.setCursor(Qt.PointingHandCursor)
-        self.btn_next.setStyleSheet("QPushButton { font-family: 'Segoe UI'; background-color: #007acc; color: white; border-radius: 20px; font-weight: bold; } QPushButton:hover { background-color: #005f99; }")
-
-        self.btn_layout.addWidget(self.btn_prev)
-        self.btn_layout.addStretch()
-        self.btn_layout.addWidget(self.btn_next)
-
-        self.inner_layout.addWidget(self.lbl_title)
-        self.inner_layout.addSpacing(10)
-        self.inner_layout.addWidget(self.lbl_image)
-        self.inner_layout.addWidget(self.lbl_text)
-        self.inner_layout.addSpacing(15)
-        self.inner_layout.addLayout(self.btn_layout)
-
-        self.layout.addWidget(self.container)
-        
         # Install Event Filter ke Parent agar bisa mendeteksi resize
         if self.parent_window:
             self.parent_window.installEventFilter(self)
 
-        QTimer.singleShot(10, self.update_content)
+        # ==========================================
+        # 3. ATUR UKURAN (TERAKHIR)
+        # ==========================================
+        # Timer singleShot digunakan agar widget dirender dulu baru diukur
+        QTimer.singleShot(10, self.update_geometry_to_parent)
 
-    def update_geometry_to_parent(self):
-        """Fungsi pintar untuk menyesuaikan ukuran dan posisi ke tengah parent"""
-        if self.parent_window:
-            # Ukuran 85% lebar dan 80% tinggi parent
-            target_w = int(self.parent_window.width() * 0.85)
-            target_h = int(self.parent_window.height() * 0.80)
-            
-            # Set ukuran
-            self.resize(target_w, target_h)
-            
-            # Pindahkan ke tengah-tengah parent (Centering)
-            parent_geo = self.parent_window.geometry()
-            x = parent_geo.x() + (parent_geo.width() - target_w) // 2
-            y = parent_geo.y() + (parent_geo.height() - target_h) // 2
-            self.move(x, y)
+    def setup_ui(self):
+        # Layout Utama
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+
+        # Container Utama (Background Gelap)
+        self.container = QFrame()
+        self.container.setStyleSheet("""
+            QFrame {
+                background-color: #1e1e1e;
+                border: 1px solid #444;
+                border-radius: 15px;
+            }
+        """)
+        # Efek Bayangan
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 150))
+        self.container.setGraphicsEffect(shadow)
+
+        # Layout Internal Container
+        container_layout = QVBoxLayout(self.container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+
+        # --- A. HEADER BAR ---
+        header_frame = QFrame()
+        header_frame.setFixedHeight(50)
+        header_frame.setStyleSheet("background-color: #252525; border-bottom: 1px solid #333; border-top-left-radius: 15px; border-top-right-radius: 15px;")
+        header_layout = QHBoxLayout(header_frame)
         
-        # Update konten gambar juga agar tidak gepeng
+        lbl_header = QLabel("  Pusat Bantuan")
+        lbl_header.setStyleSheet("color: white; font-weight: bold; font-family: 'Segoe UI'; font-size: 16px; border: none;")
+        
+        btn_close = QPushButton("✕")
+        btn_close.setFixedSize(40, 30)
+        btn_close.setCursor(Qt.PointingHandCursor)
+        btn_close.clicked.connect(self.close)
+        btn_close.setStyleSheet("""
+            QPushButton { color: #aaa; background: transparent; border: none; font-size: 16px; }
+            QPushButton:hover { color: white; background-color: #e81123; border-radius: 5px; }
+        """)
+
+        header_layout.addWidget(lbl_header)
+        header_layout.addStretch()
+        header_layout.addWidget(btn_close)
+        
+        container_layout.addWidget(header_frame)
+
+        # --- B. BODY ---
+        body_layout = QHBoxLayout()
+        
+        # B1. MENU SAMPING
+        self.menu_list = QListWidget()
+        self.menu_list.setFixedWidth(200)
+        self.menu_list.addItems(self.tutorial_data.keys())
+        self.menu_list.setCurrentRow(0)
+        self.menu_list.currentRowChanged.connect(self.change_category)
+        self.menu_list.setCursor(Qt.PointingHandCursor)
+        self.menu_list.setStyleSheet("""
+            QListWidget {
+                background-color: #252525;
+                border: none;
+                border-right: 1px solid #333;
+                color: #ccc;
+                font-family: 'Segoe UI';
+                font-size: 16px;
+                padding-top: 10px;
+                outline: none;
+                border-bottom-left-radius: 15px;
+            }
+            QListWidget::item {
+                padding: 15px;
+                margin: 5px 10px;
+                border-radius: 8px;
+            }
+            QListWidget::item:selected {
+                background-color: #007acc;
+                color: white;
+                font-weight: bold;
+            }
+            QListWidget::item:hover:!selected {
+                background-color: #333;
+            }
+        """)
+
+        # B2. AREA KONTEN
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(20, 20, 20, 20)
+
+        # Judul Langkah
+        self.lbl_step_title = QLabel()
+        self.lbl_step_title.setStyleSheet("font-family: 'Segoe UI'; font-size: 22px; font-weight: bold; color: white; border: none; margin-bottom: 10px;")
+        self.lbl_step_title.setAlignment(Qt.AlignCenter)
+
+        # Gambar Langkah
+        self.lbl_image = QLabel()
+        self.lbl_image.setAlignment(Qt.AlignCenter)
+        self.lbl_image.setStyleSheet("border-radius: 10px; border: 1px solid #444;")
+        self.lbl_image.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.lbl_image.setMinimumSize(400, 250)
+
+        # Teks Deskripsi
+        self.lbl_text = QLabel()
+        self.lbl_text.setWordWrap(True)
+        self.lbl_text.setAlignment(Qt.AlignCenter)
+        self.lbl_text.setStyleSheet("font-family: 'Segoe UI'; font-size: 18px; color: #ddd; border: none; margin-top: 15px; line-height: 1.4;")
+        self.lbl_text.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum) # Tinggi menyesuaikan teks
+
+        # Tombol Navigasi
+        nav_layout = QHBoxLayout()
+        self.btn_prev = QPushButton("← Sebelumnya")
+        self.btn_prev.clicked.connect(self.prev_step)
+        self.btn_prev.setCursor(Qt.PointingHandCursor)
+        self.btn_prev.setStyleSheet("color: #888; background: transparent; font-family: 'Segoe UI'; font-weight: bold; border: none;")
+
+        self.btn_next = QPushButton("Lanjut →")
+        self.btn_next.clicked.connect(self.next_step)
+        self.btn_next.setCursor(Qt.PointingHandCursor)
+        self.btn_next.setFixedSize(120, 40)
+        self.btn_next.setStyleSheet("""
+            QPushButton { background-color: #007acc; color: white; border-radius: 20px; font-family: 'Segoe UI'; font-weight: bold; border: none; }
+            QPushButton:hover { background-color: #005f99; }
+        """)
+
+        nav_layout.addWidget(self.btn_prev)
+        nav_layout.addStretch()
+        nav_layout.addWidget(self.btn_next)
+
+        content_layout.addWidget(self.lbl_step_title)
+        content_layout.addWidget(self.lbl_image)
+        content_layout.addWidget(self.lbl_text)
+        content_layout.addLayout(nav_layout)
+
+        body_layout.addWidget(self.menu_list)
+        body_layout.addWidget(content_widget, stretch=1)
+        
+        container_layout.addLayout(body_layout)
+        main_layout.addWidget(self.container)
+
+    # --- LOGIKA ---
+    def change_category(self, row):
+        category_name = self.menu_list.item(row).text()
+        self.current_category = category_name
+        self.current_steps_list = self.tutorial_data[category_name]
+        self.current_step_idx = 0 
         self.update_content()
 
-    def eventFilter(self, obj, event):
-        # Jika parent di-resize atau dipindah, tutorial ikut menyesuaikan
-        if obj == self.parent_window and event.type() in [event.Resize, event.Move]:
-            self.update_geometry_to_parent()
-        return super().eventFilter(obj, event)
-
     def update_content(self):
-        if not self.isVisible(): return
+        # Ambil data berdasarkan index saat ini
+        if not self.current_steps_list: return
+        data = self.current_steps_list[self.current_step_idx]
         
-        # Pastikan index valid
-        if self.current_step < 0 or self.current_step >= len(self.steps): return
-
-        data = self.steps[self.current_step]
-        self.lbl_title.setText(data["title"])
+        self.lbl_step_title.setText(data["title"])
         self.lbl_text.setText(data["text"])
         
-        # Logic gambar responsif
+        # Load Gambar Responsif
         avail_w = self.lbl_image.width()
         avail_h = self.lbl_image.height()
         
         if avail_w > 10 and avail_h > 10:
             if os.path.exists(data["image"]):
                 pix = QPixmap(data["image"])
-                scaled_pix = pix.scaled(avail_w - 10, avail_h - 10, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                self.lbl_image.setPixmap(scaled_pix)
+                scaled = pix.scaled(avail_w - 20, avail_h - 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.lbl_image.setPixmap(scaled)
             else:
                 self.lbl_image.clear()
-                self.lbl_image.setText(f"[Gambar tidak ditemukan]")
+                self.lbl_image.setText(f"Gambar tidak ditemukan:\n{data['image']}")
 
-        # Update tombol
-        self.btn_prev.setVisible(self.current_step > 0)
+        # Atur tombol
+        self.btn_prev.setVisible(self.current_step_idx > 0)
         
-        if self.current_step == len(self.steps) - 1:
+        if self.current_step_idx == len(self.current_steps_list) - 1:
             self.btn_next.setText("Selesai")
-            # self.btn_next.setStyleSheet("background-color: #27ae60; color: white; border-radius: 20px; font-weight: bold;")
+            self.btn_next.setStyleSheet("background-color: #27ae60; color: white; border-radius: 20px; font-weight: bold; border: none;")
         else:
             self.btn_next.setText("Lanjut →")
-            # self.btn_next.setStyleSheet("background-color: #007acc; color: white; border-radius: 20px; font-weight: bold;")
+            self.btn_next.setStyleSheet("background-color: #007acc; color: white; border-radius: 20px; font-weight: bold; border: none;")
 
     def next_step(self):
-        if self.current_step < len(self.steps) - 1:
-            self.current_step += 1
+        if self.current_step_idx < len(self.current_steps_list) - 1:
+            self.current_step_idx += 1
             self.update_content()
         else:
-            self.accept() # Tutup dialog
+            self.close()
 
     def prev_step(self):
-        if self.current_step > 0:
-            self.current_step -= 1
+        if self.current_step_idx > 0:
+            self.current_step_idx -= 1
             self.update_content()
+
+    def update_geometry_to_parent(self):
+        """Menyesuaikan ukuran popup agar responsif terhadap parent"""
+        if self.parent_window:
+            target_w = int(self.parent_window.width() * 0.90)
+            target_h = int(self.parent_window.height() * 0.85)
+            self.resize(target_w, target_h)
+            
+            # Centering
+            parent_geo = self.parent_window.geometry()
+            x = parent_geo.x() + (parent_geo.width() - target_w) // 2
+            y = parent_geo.y() + (parent_geo.height() - target_h) // 2
+            self.move(x, y)
+        
+        self.update_content()
+
+    def eventFilter(self, obj, event):
+        if obj == self.parent_window and event.type() in [event.Resize, event.Move]:
+            self.update_geometry_to_parent()
+        return super().eventFilter(obj, event)
+    
+    # Tambahkan resize event lokal agar gambar ikut berubah saat resize manual
+    def resizeEvent(self, event):
+        self.update_content()
+        super().resizeEvent(event)
 
 class CustomTitleBar(QFrame):
     def __init__(self, parent=None):

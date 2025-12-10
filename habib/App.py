@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QLabel,
     QSlider, QProgressBar, QGraphicsView, QGraphicsScene, QGraphicsLineItem, QTableWidget, QTableWidgetItem,
-    QHeaderView, QAbstractItemView, QSizePolicy, QInputDialog, QMessageBox, QComboBox
+    QHeaderView, QAbstractItemView, QSizePolicy, QInputDialog, QMessageBox, QComboBox, QDialog, QListView
 )
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QGraphicsVideoItem
@@ -1147,34 +1147,135 @@ class VideoPlayer(QWidget):
     # =========================================================
     
     def edit_vehicle_class(self, row_idx):
-        """Munculkan dialog edit kelas."""
-        # Pause video saat mengedit
+        """Munculkan dialog edit kelas (Custom Dialog agar CSS 100% jalan)."""
         self.media_player.pause()
 
-        # Ambil data saat ini
         current_class = self.table_csv.item(row_idx, 1).text()
         current_id = self.table_csv.item(row_idx, 2).text()
         
-        # Cari index kelas saat ini di daftar valid
-        current_idx = 0
-        if current_class in VALID_CLASSES:
-            current_idx = VALID_CLASSES.index(current_class)
+        # --- 1. BUAT CUSTOM DIALOG ---
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Edit Kelas Kendaraan")
+        dialog.setFixedSize(400, 200)
+        
+        # Layout untuk dialog
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
 
-        # Tampilkan Dialog
-        item, ok = QInputDialog.getItem(
-            self, "Edit Kelas Kendaraan", 
-            f"Ubah kelas untuk ID {current_id}:", 
-            VALID_CLASSES, current_idx, False
-        )
+        # Label
+        lbl = QLabel(f"Ubah kelas untuk ID {current_id}:", dialog)
+        layout.addWidget(lbl)
 
-        if ok and item:
-            if item != current_class:
+        # ComboBox (Dropdown)
+        combo = QComboBox(dialog)
+        combo.addItems(VALID_CLASSES)
+        combo.setCurrentText(current_class)
+        # PENTING: Set View agar CSS dropdown terbaca sempurna
+        combo.setView(QListView()) 
+        layout.addWidget(combo)
+
+        # Tombol (OK / Cancel)
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        btn_cancel = QPushButton("Batal", dialog)
+        btn_cancel.clicked.connect(dialog.reject)
+        
+        btn_save = QPushButton("Simpan", dialog)
+        btn_save.clicked.connect(dialog.accept)
+        
+        btn_layout.addWidget(btn_cancel)
+        btn_layout.addWidget(btn_save)
+        layout.addLayout(btn_layout)
+
+        # --- 2. TERAPKAN STYLE SHEET (DARK MODE) ---
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #2b2b2b;
+                color: #ffffff;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+            }
+            QLabel {
+                color: #e0e0e0;
+                background-color: #2b2b2b;
+                font-weight: bold;
+                font-size: 14px;
+                border: none;
+            }
+            /* Style ComboBox Utama */
+            QComboBox {
+                background-color: #333333;
+                color: #ffffff;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 14px;
+            }
+            QComboBox::drop-down {
+                border: none;
+                background: #444; /* Warna tombol panah */
+                width: 30px;
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid white; /* Panah Putih */
+            }
+            
+            /* Style Popup List (Bagian yang bermasalah sebelumnya) */
+            QComboBox QAbstractItemView {
+                background-color: #333333;
+                color: #ffffff;
+                border: 1px solid #555;
+                outline: none;
+                selection-background-color: #0078d4;
+                selection-color: white;
+            }
+            
+            /* Style Tombol */
+            QPushButton {
+                border-radius: 5px;
+                padding: 8px 15px;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QPushButton[text="Batal"] {
+                background-color: #444;
+                color: #ddd;
+                border: 1px solid #555;
+            }
+            QPushButton[text="Batal"]:hover { background-color: #555; }
+            
+            QPushButton[text="Simpan"] {
+                background-color: #0078d4;
+                color: white;
+                border: none;
+            }
+            QPushButton[text="Simpan"]:hover { background-color: #0063b1; }
+        """)
+
+        # --- 3. EKSEKUSI DIALOG ---
+        if dialog.exec_() == QDialog.Accepted:
+            new_item = combo.currentText()
+            if new_item != current_class:
                 # Update Tabel UI
-                self.table_csv.item(row_idx, 1).setText(item)
+                self.table_csv.item(row_idx, 1).setText(new_item)
                 
                 # Update CSV dan Hitung Ulang Summary
-                self.update_csv_files(row_idx, item)
-                QMessageBox.information(self, "Sukses", "Data berhasil diubah dan disimpan.")
+                self.update_csv_files(row_idx, new_item)
+                
+                # Pesan Sukses
+                msg = QMessageBox(self)
+                msg.setWindowTitle("Sukses")
+                msg.setText("Data berhasil diubah dan disimpan.")
+                msg.setIcon(QMessageBox.Information)
+                msg.setStyleSheet("QMessageBox { background-color: #2b2b2b; color: white; } QLabel { color: white; } QPushButton { background-color: #0078d4; color: white; border-radius: 4px; padding: 5px 10px; }")
+                msg.exec_()
 
     def update_csv_files(self, row_idx, new_class):
         """Mengupdate log CSV dan menghitung ulang summary."""
